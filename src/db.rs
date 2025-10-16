@@ -27,6 +27,7 @@ pub async fn init(db: &DatabaseConnection) -> Result<(), DbErr> {
     create_table_if_not_exists(db, schema.create_table_from_entity(classroom::Entity)).await?;
     create_table_if_not_exists(db, schema.create_table_from_entity(user::Entity)).await?;
     ensure_language_locked_column(db).await?;
+    ensure_tasks_column(db).await?;
 
     Ok(())
 }
@@ -64,6 +65,41 @@ async fn ensure_language_locked_column(db: &DatabaseConnection) -> Result<(), Db
             backend,
             DatabaseBackend::Sqlite | DatabaseBackend::Postgres | DatabaseBackend::MySql
         ) && err.to_string().to_lowercase().contains("duplicate");
+
+        if !already_exists {
+            return Err(err);
+        }
+    }
+
+    Ok(())
+}
+
+async fn ensure_tasks_column(db: &DatabaseConnection) -> Result<(), DbErr> {
+    let backend = db.get_database_backend();
+    let stmt = match backend {
+        DatabaseBackend::Sqlite => Statement::from_string(
+            DatabaseBackend::Sqlite,
+            "ALTER TABLE classrooms ADD COLUMN tasks TEXT NOT NULL DEFAULT '[]'",
+        ),
+        DatabaseBackend::Postgres => Statement::from_string(
+            DatabaseBackend::Postgres,
+            "ALTER TABLE classrooms ADD COLUMN IF NOT EXISTS tasks JSONB NOT NULL DEFAULT '[]'::jsonb",
+        ),
+        DatabaseBackend::MySql => Statement::from_string(
+            DatabaseBackend::MySql,
+            "ALTER TABLE classrooms ADD COLUMN IF NOT EXISTS tasks JSON NOT NULL DEFAULT (JSON_ARRAY())",
+        ),
+    };
+
+    if let Err(err) = db.execute(stmt).await {
+        let err_msg = err.to_string().to_lowercase();
+        let already_exists = match backend {
+            DatabaseBackend::Sqlite => err_msg.contains("duplicate column"),
+            DatabaseBackend::Postgres => err_msg.contains("already exists"),
+            DatabaseBackend::MySql => {
+                err_msg.contains("duplicate column") || err_msg.contains("already exists")
+            }
+        };
 
         if !already_exists {
             return Err(err);

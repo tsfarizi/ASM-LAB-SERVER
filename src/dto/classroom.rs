@@ -16,6 +16,8 @@ pub struct CreateClassroomRequest {
     pub lock_language: Option<bool>,
     #[serde(default)]
     pub users: Vec<CreateUserRequest>,
+    #[serde(default)]
+    pub tasks: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -27,6 +29,7 @@ pub struct UpdateClassroomRequest {
     pub lock_language: Option<bool>,
     #[serde(default)]
     pub users: Option<Vec<CreateUserRequest>>,
+    pub tasks: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -73,7 +76,7 @@ impl ClassroomResponse {
             programming_language: normalize_language(&classroom.programming_language),
             language_locked: classroom.language_locked,
             users: users.into_iter().map(UserResponse::from).collect(),
-            tasks: Vec::new(),
+            tasks: deserialize_tasks(&classroom.tasks),
             created_at: classroom.created_at,
             updated_at: classroom.updated_at,
         }
@@ -87,4 +90,12 @@ pub(crate) fn normalize_language(value: &str) -> Option<String> {
     } else {
         Some(trimmed.to_string())
     }
+}
+
+pub(crate) fn serialize_tasks(tasks: &[String]) -> String {
+    serde_json::to_string(tasks).unwrap_or_else(|_| "[]".to_string())
+}
+
+pub(crate) fn deserialize_tasks(value: &str) -> Vec<String> {
+    serde_json::from_str(value).unwrap_or_default()
 }

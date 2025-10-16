@@ -13,7 +13,7 @@ use utoipa::IntoParams;
 use crate::{
     dto::{
         ClassroomResponse, CreateClassroomRequest, CreateUserRequest, UpdateClassroomRequest,
-        UpdateUserRequest, UserResponse,
+        UpdateUserRequest, UserResponse, classroom::serialize_tasks,
     },
     entities::{classroom, user},
     error::AppError,
@@ -98,14 +98,17 @@ pub async fn create_classroom(
         programming_language,
         lock_language,
         users,
+        tasks,
     } = payload;
 
     let programming_language = programming_language.unwrap_or_default().trim().to_string();
+    let tasks = serialize_tasks(&tasks);
 
     let classroom_model = classroom::ActiveModel {
         name: sea_orm::ActiveValue::Set(name),
         programming_language: sea_orm::ActiveValue::Set(programming_language),
         language_locked: sea_orm::ActiveValue::Set(lock_language.unwrap_or(false)),
+        tasks: sea_orm::ActiveValue::Set(tasks),
         created_at: sea_orm::ActiveValue::Set(now),
         updated_at: sea_orm::ActiveValue::Set(now),
         ..Default::default()
@@ -153,6 +156,9 @@ pub async fn update_classroom(
     }
     if let Some(lock_language) = payload.lock_language {
         classroom_am.language_locked = sea_orm::ActiveValue::Set(lock_language);
+    }
+    if let Some(tasks) = payload.tasks {
+        classroom_am.tasks = sea_orm::ActiveValue::Set(serialize_tasks(&tasks));
     }
     classroom_am.updated_at = sea_orm::ActiveValue::Set(Utc::now());
 

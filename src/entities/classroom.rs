@@ -8,6 +8,7 @@ pub struct Model {
     pub name: String,
     pub programming_language: String,
     pub language_locked: bool,
+    pub tasks: String,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }
