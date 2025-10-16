@@ -112,6 +112,7 @@ async fn main() -> Result<()> {
             Method::GET,
             Method::POST,
             Method::PUT,
+            Method::PATCH,
             Method::DELETE,
             Method::OPTIONS,
         ])
