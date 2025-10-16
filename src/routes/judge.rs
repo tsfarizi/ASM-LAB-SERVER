@@ -30,17 +30,16 @@ pub async fn submit_code(
         .map(|npm| npm.trim())
         .filter(|npm| !npm.is_empty())
     {
-        let npm = npm.to_owned();
-        let user_model = user::Entity::find()
-            .filter(user::Column::Npm.eq(npm.as_str()))
+        if let Some(user_model) = user::Entity::find()
+            .filter(user::Column::Npm.eq(npm))
             .one(&state.db)
             .await?
-            .ok_or(AppError::UserNotFound)?;
-
-        let mut user_am = user_model.into_active_model();
-        user_am.code = sea_orm::ActiveValue::Set(payload.source_code.clone());
-        user_am.updated_at = sea_orm::ActiveValue::Set(Utc::now());
-        user_am.update(&state.db).await?;
+        {
+            let mut user_am = user_model.into_active_model();
+            user_am.code = sea_orm::ActiveValue::Set(payload.source_code.clone());
+            user_am.updated_at = sea_orm::ActiveValue::Set(Utc::now());
+            user_am.update(&state.db).await?;
+        }
     }
 
     let response = state
