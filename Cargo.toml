@@ -1,0 +1,22 @@
+[package]
+name = "ASM-LAB-SERVER"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.7", features = ["macros", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+sea-orm = { version = "0.12", features = ["macros", "sqlx-sqlite", "runtime-tokio-native-tls"] }
+sea-query = "0.30"
+utoipa = { version = "4", features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { version = "5", features = ["axum"] }
+dotenvy = "0.15"
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1"
+tower-http = { version = "0.5", features = ["cors"] }
+reqwest = { version = "0.11", features = ["json"] }
