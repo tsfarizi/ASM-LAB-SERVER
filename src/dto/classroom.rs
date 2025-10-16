@@ -59,6 +59,8 @@ pub struct ClassroomResponse {
     pub programming_language: Option<String>,
     pub language_locked: bool,
     pub users: Vec<UserResponse>,
+    #[serde(default)]
+    pub tasks: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -71,6 +73,7 @@ impl ClassroomResponse {
             programming_language: normalize_language(&classroom.programming_language),
             language_locked: classroom.language_locked,
             users: users.into_iter().map(UserResponse::from).collect(),
+            tasks: Vec::new(),
             created_at: classroom.created_at,
             updated_at: classroom.updated_at,
         }
