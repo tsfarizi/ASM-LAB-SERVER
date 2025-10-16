@@ -78,7 +78,7 @@ pub struct LoginRequest {
     pub as_admin: bool,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginClassroomInfo {
     pub id: i32,

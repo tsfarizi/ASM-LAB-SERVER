@@ -93,9 +93,19 @@ pub async fn create_classroom(
     let txn = state.db.begin().await?;
     let now = Utc::now();
 
+    let CreateClassroomRequest {
+        name,
+        programming_language,
+        lock_language,
+        users,
+    } = payload;
+
+    let programming_language = programming_language.unwrap_or_default().trim().to_string();
+
     let classroom_model = classroom::ActiveModel {
-        name: sea_orm::ActiveValue::Set(payload.name.clone()),
-        programming_language: sea_orm::ActiveValue::Set(payload.programming_language.clone()),
+        name: sea_orm::ActiveValue::Set(name),
+        programming_language: sea_orm::ActiveValue::Set(programming_language),
+        language_locked: sea_orm::ActiveValue::Set(lock_language.unwrap_or(false)),
         created_at: sea_orm::ActiveValue::Set(now),
         updated_at: sea_orm::ActiveValue::Set(now),
         ..Default::default()
@@ -103,7 +113,7 @@ pub async fn create_classroom(
     .insert(&txn)
     .await?;
 
-    insert_users(&txn, classroom_model.id, payload.users).await?;
+    insert_users(&txn, classroom_model.id, users).await?;
     txn.commit().await?;
 
     let response = load_classroom_with_users(&state, classroom_model.id).await?;
@@ -138,7 +148,11 @@ pub async fn update_classroom(
         classroom_am.name = sea_orm::ActiveValue::Set(name);
     }
     if let Some(programming_language) = payload.programming_language {
+        let programming_language = programming_language.trim().to_string();
         classroom_am.programming_language = sea_orm::ActiveValue::Set(programming_language);
+    }
+    if let Some(lock_language) = payload.lock_language {
+        classroom_am.language_locked = sea_orm::ActiveValue::Set(lock_language);
     }
     classroom_am.updated_at = sea_orm::ActiveValue::Set(Utc::now());
 
