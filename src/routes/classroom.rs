@@ -142,9 +142,8 @@ pub async fn update_classroom(
     Path(id): Path<i32>,
     Json(payload): Json<UpdateClassroomRequest>,
 ) -> Result<Json<ClassroomResponse>, AppError> {
-    let txn = state.db.begin().await?;
-
     let (classroom_model, _users) = load_classroom_with_users(&state, id).await?;
+    let txn = state.db.begin().await?;
     let mut classroom_am: classroom::ActiveModel = classroom_model.into_active_model();
 
     if let Some(name) = payload.name {
