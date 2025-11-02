@@ -18,6 +18,7 @@ pub struct UpdateUserRequest {
     pub name: Option<String>,
     pub npm: Option<String>,
     pub code: Option<String>,
+    pub active: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -27,6 +28,7 @@ pub struct UserResponse {
     pub name: String,
     pub npm: String,
     pub code: String,
+    pub active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -38,6 +40,7 @@ impl From<user::Model> for UserResponse {
             name: model.name,
             npm: model.npm,
             code: model.code,
+            active: model.active,
             created_at: model.created_at,
             updated_at: model.updated_at,
         }

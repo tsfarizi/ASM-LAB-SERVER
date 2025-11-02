@@ -117,7 +117,17 @@ async fn find_classroom_for_npm(
         .one(db)
         .await?;
 
-    if let Some((_user, Some(classroom_model))) = record {
+    if let Some((user_model, Some(classroom_model))) = record {
+        if !user_model.active {
+            return Err(AppError::Unauthorized("Akun ini tidak aktif.".into()));
+        }
+
+        if classroom_model.is_exam && user_model.exam_started_at.is_none() {
+            let mut user_am: user::ActiveModel = user_model.into();
+            user_am.exam_started_at = Set(Some(Utc::now()));
+            user_am.update(db).await?;
+        }
+
         Ok(Some(LoginClassroomInfo::from_model(classroom_model)))
     } else {
         Ok(None)

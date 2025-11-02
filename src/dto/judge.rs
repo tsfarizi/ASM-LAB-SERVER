@@ -22,3 +22,20 @@ pub struct Judge0SubmissionRequest {
     #[schema(example = "51422582")]
     pub npm: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Judge0SubmissionStatus {
+    pub id: i32,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Judge0SubmissionResponse {
+    pub stdout: Option<String>,
+    pub stderr: Option<String>,
+    pub compile_output: Option<String>,
+    pub message: Option<String>,
+    pub status: Option<Judge0SubmissionStatus>,
+    pub token: String,
+}

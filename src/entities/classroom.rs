@@ -9,6 +9,10 @@ pub struct Model {
     pub programming_language: String,
     pub language_locked: bool,
     pub tasks: String,
+    pub is_exam: bool,
+    pub test_code: String,
+    pub time_limit: i64,
+    pub presetup_code: String,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }

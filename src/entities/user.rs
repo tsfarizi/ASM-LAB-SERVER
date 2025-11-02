@@ -9,6 +9,8 @@ pub struct Model {
     pub name: String,
     pub npm: String,
     pub code: String,
+    pub active: bool,
+    pub exam_started_at: Option<DateTimeUtc>,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }

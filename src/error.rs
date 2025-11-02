@@ -20,6 +20,8 @@ pub enum AppError {
     Database(#[from] DbErr),
     #[error("external service error: {0}")]
     External(String),
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
 }
 
 impl IntoResponse for AppError {
@@ -28,6 +30,7 @@ impl IntoResponse for AppError {
             AppError::ClassroomNotFound => (StatusCode::NOT_FOUND, self.to_string()),
             AppError::UserNotFound => (StatusCode::NOT_FOUND, self.to_string()),
             AppError::BadRequest(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            AppError::Unauthorized(_) => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::Database(err) => {
                 let status = match err {
                     DbErr::RecordNotFound(_) => StatusCode::NOT_FOUND,

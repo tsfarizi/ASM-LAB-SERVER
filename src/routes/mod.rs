@@ -1,7 +1,5 @@
-use axum::{
-    Router,
-    routing::{get, post, put},
-};
+use axum::Router;
+use axum::routing::{delete, get, post, put};
 
 use crate::state::AppState;
 
@@ -16,16 +14,14 @@ pub fn classroom_router() -> Router<AppState> {
             "/classrooms",
             get(classroom::list_classrooms).post(classroom::create_classroom),
         )
-        .route(
-            "/classrooms/:id",
-            get(classroom::get_classroom)
-                .put(classroom::update_classroom)
-                .delete(classroom::delete_classroom),
-        )
+        .route("/:id", delete(classroom::delete_classroom))
+        .route("/:id/events", get(classroom::classroom_events))
+        .route("/:id/finish", post(classroom::finish_exam))
         .route(
             "/classrooms/:id/users",
             get(classroom::list_classroom_users).post(classroom::add_user_to_classroom),
         )
+        .route("/classrooms/:id/users/status", put(classroom::update_users_status))
         .route(
             "/classrooms/:classroom_id/users/:user_id",
             put(classroom::update_user_in_classroom).delete(classroom::delete_user_from_classroom),
