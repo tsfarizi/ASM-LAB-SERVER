@@ -14,9 +14,14 @@ pub fn classroom_router() -> Router<AppState> {
             "/classrooms",
             get(classroom::list_classrooms).post(classroom::create_classroom),
         )
-        .route("/:id", delete(classroom::delete_classroom))
-        .route("/:id/events", get(classroom::classroom_events))
-        .route("/:id/finish", post(classroom::finish_exam))
+        .route(
+            "/classrooms/:id",
+            get(classroom::get_classroom)
+                .put(classroom::update_classroom)
+                .delete(classroom::delete_classroom),
+        )
+        .route("/classrooms/:id/events", get(classroom::classroom_events))
+        .route("/classrooms/:id/finish", post(classroom::finish_exam))
         .route(
             "/classrooms/:id/users",
             get(classroom::list_classroom_users).post(classroom::add_user_to_classroom),
