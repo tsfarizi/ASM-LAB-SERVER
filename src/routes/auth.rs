@@ -122,10 +122,22 @@ async fn find_classroom_for_npm(
             return Err(AppError::Unauthorized("Akun ini tidak aktif.".into()));
         }
 
-        if classroom_model.is_exam && user_model.exam_started_at.is_none() {
-            let mut user_am: user::ActiveModel = user_model.into();
-            user_am.exam_started_at = Set(Some(Utc::now()));
-            user_am.update(db).await?;
+        if classroom_model.is_exam {
+            let now = Utc::now();
+            if let (Some(start), Some(end)) = (classroom_model.exam_start, classroom_model.exam_end) {
+                if now < start {
+                    return Err(AppError::Unauthorized("Ujian belum dimulai.".into()));
+                }
+                if now > end {
+                    return Err(AppError::Unauthorized("Ujian telah berakhir.".into()));
+                }
+            }
+
+            if user_model.exam_started_at.is_none() {
+                let mut user_am: user::ActiveModel = user_model.into();
+                user_am.exam_started_at = Set(Some(now));
+                user_am.update(db).await?;
+            }
         }
 
         Ok(Some(LoginClassroomInfo::from_model(classroom_model)))

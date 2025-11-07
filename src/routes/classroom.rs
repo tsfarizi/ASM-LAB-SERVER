@@ -25,6 +25,42 @@ use crate::{
     state::AppState,
 };
 
+#[utoipa::path(
+    post,
+    path = "/api/classrooms/{id}/deactivate-post-exam",
+    params(ClassroomPath),
+    tag = "Classrooms",
+    responses(
+        (status = 204, description = "Users deactivated after exam"),
+        (status = 404, description = "Classroom not found")
+    )
+)]
+pub async fn deactivate_users_post_exam(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+) -> Result<StatusCode, AppError> {
+    let (classroom, users) = load_classroom_with_users(&state, id).await?;
+
+    if !classroom.is_exam {
+        return Err(AppError::BadRequest("Not an exam classroom".into()));
+    }
+
+    if let Some(end_time) = classroom.exam_end {
+        if Utc::now() > end_time {
+            let user_ids: Vec<i32> = users.into_iter().map(|u| u.id).collect();
+            if !user_ids.is_empty() {
+                user::Entity::update_many()
+                    .col_expr(user::Column::Active, false.into())
+                    .filter(user::Column::Id.is_in(user_ids))
+                    .exec(&state.db)
+                    .await?;
+            }
+        }
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 #[allow(dead_code)]
 #[derive(Debug, IntoParams)]
 pub struct ClassroomPath {
@@ -112,7 +148,8 @@ pub async fn create_classroom(
         tasks,
         is_exam,
         test_code,
-        time_limit,
+        exam_start,
+        exam_end,
         presetup_code,
     } = payload;
 
@@ -126,7 +163,8 @@ pub async fn create_classroom(
         tasks: sea_orm::ActiveValue::Set(tasks),
         is_exam: sea_orm::ActiveValue::Set(is_exam.unwrap_or(false)),
         test_code: sea_orm::ActiveValue::Set(test_code.unwrap_or_default()),
-        time_limit: sea_orm::ActiveValue::Set(time_limit.unwrap_or(0)),
+        exam_start: sea_orm::ActiveValue::Set(exam_start),
+        exam_end: sea_orm::ActiveValue::Set(exam_end),
         presetup_code: sea_orm::ActiveValue::Set(presetup_code.unwrap_or_default()),
         created_at: sea_orm::ActiveValue::Set(now),
         updated_at: sea_orm::ActiveValue::Set(now),
@@ -185,8 +223,11 @@ pub async fn update_classroom(
     if let Some(test_code) = payload.test_code {
         classroom_am.test_code = sea_orm::ActiveValue::Set(test_code);
     }
-    if let Some(time_limit) = payload.time_limit {
-        classroom_am.time_limit = sea_orm::ActiveValue::Set(time_limit);
+    if let Some(exam_start) = payload.exam_start {
+        classroom_am.exam_start = sea_orm::ActiveValue::Set(Some(exam_start));
+    }
+    if let Some(exam_end) = payload.exam_end {
+        classroom_am.exam_end = sea_orm::ActiveValue::Set(Some(exam_end));
     }
     if let Some(presetup_code) = payload.presetup_code {
         classroom_am.presetup_code = sea_orm::ActiveValue::Set(presetup_code);
@@ -386,15 +427,13 @@ pub async fn classroom_events(
     Path(id): Path<i32>,
     Query(params): Query<EventsParams>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, AppError>>>, AppError> {
-    let (classroom, user) = find_classroom_and_user(&state.db, id, &params.npm).await?;
+    let (classroom, _user) = find_classroom_and_user(&state.db, id, &params.npm).await?;
 
     if !classroom.is_exam {
         return Err(AppError::BadRequest("Not an exam classroom".into()));
     }
 
-    let exam_started_at = user.exam_started_at.ok_or_else(|| AppError::BadRequest("Exam not started".into()))?;
-    let time_limit = Duration::from_secs(classroom.time_limit as u64 * 60);
-    let end_time = exam_started_at + time_limit;
+    let end_time = classroom.exam_end.ok_or_else(|| AppError::BadRequest("Exam end time not set".into()))?;
 
     let stream = async_stream::stream! {
         loop {
@@ -510,7 +549,7 @@ pub async fn finish_exam(
 
     let submission_payload = Judge0SubmissionRequest {
         source_code: payload.code,
-        language_id: payload.language_id,
+        language_id: payload.language_id.unwrap_or(63),
         npm: Some(payload.npm),
         stdin: None,
         expected_output: None,

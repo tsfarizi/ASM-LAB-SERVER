@@ -53,13 +53,26 @@ pub async fn run(db: &impl ConnectionTrait) -> Result<(), DbErr> {
     add_column_if_not_exists(
         db,
         classroom::Entity,
-        ColumnDef::new(classroom::Column::TimeLimit)
-            .big_integer()
-            .not_null()
-            .default(0)
+        ColumnDef::new(classroom::Column::ExamStart)
+            .date_time()
+            .null()
             .to_owned(),
     )
     .await?;
+    add_column_if_not_exists(
+        db,
+        classroom::Entity,
+        ColumnDef::new(classroom::Column::ExamEnd)
+            .date_time()
+            .null()
+            .to_owned(),
+    )
+    .await?;
+
+    // Drop time_limit column if you want
+    // This is a bit more complex as it requires checking if the column exists first
+    // and then dropping it. For now, we'll just leave it.
+
     add_column_if_not_exists(
         db,
         classroom::Entity,

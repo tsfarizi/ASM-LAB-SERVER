@@ -22,6 +22,7 @@ pub fn classroom_router() -> Router<AppState> {
         )
         .route("/classrooms/:id/events", get(classroom::classroom_events))
         .route("/classrooms/:id/finish", post(classroom::finish_exam))
+        .route("/classrooms/:id/deactivate-post-exam", post(classroom::deactivate_users_post_exam))
         .route(
             "/classrooms/:id/users",
             get(classroom::list_classroom_users).post(classroom::add_user_to_classroom),

@@ -31,6 +31,7 @@ use crate::state::AppState;
         routes::classroom::create_classroom,
         routes::classroom::update_classroom,
         routes::classroom::delete_classroom,
+        routes::classroom::deactivate_users_post_exam,
         routes::classroom::list_classroom_users,
         routes::classroom::add_user_to_classroom,
         routes::classroom::update_user_in_classroom,
